@@ -10,6 +10,11 @@
         android:layout_height="wrap_content"
         android:id="@+id/count_done"
         android:text=""/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/dbbtn"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="80dp"

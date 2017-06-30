@@ -1,10 +1,14 @@
 package com.velkonost.takeaday;
 
+import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.mindorks.placeholderview.SwipeDecor;
@@ -13,6 +17,9 @@ import com.mindorks.placeholderview.listeners.ItemRemovedListener;
 import com.velkonost.takeaday.managers.DBHelper;
 import com.velkonost.takeaday.swipe.TinderCard;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -20,29 +27,30 @@ import butterknife.OnClick;
 import static com.velkonost.takeaday.Constants.COUNT_DONE;
 import static com.velkonost.takeaday.Constants.MAX;
 import static com.velkonost.takeaday.Constants.MIN;
-import static com.velkonost.takeaday.R.id.count_done;
+import static com.velkonost.takeaday.Constants.MULT;
 import static com.velkonost.takeaday.managers.PhoneDataStorageManager.loadText;
 import static com.velkonost.takeaday.managers.PhoneDataStorageManager.saveText;
 
 /**
  * @author Velkonost
  */
-
 public class ActivityTinder extends AppCompatActivity {
 
     private static final String TAG = "ActivityTinder";
 
     public static int countDone = 0;
+    public static int mult = 0;
 
     private int id1, id2, id3;
 
     @BindView(R.id.swipeView)
     SwipePlaceHolderView mSwipView;
 
-    @BindView(count_done)
-    TextView txtCountDone;
+
+    static TextView txtCountDone;
 
     private DBHelper dbHelper;
+    private ArrayList<String> dones;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +58,13 @@ public class ActivityTinder extends AppCompatActivity {
         setContentView(R.layout.activity_tinder_swipe);
         ButterKnife.bind(this);
 
+        txtCountDone = (TextView) findViewById(R.id.count_done);
+
         countDone = loadText(ActivityTinder.this, COUNT_DONE).equals("")
                 ? 0 : Integer.parseInt(loadText(ActivityTinder.this, COUNT_DONE));
+
+        mult= loadText(ActivityTinder.this, MULT).equals("")
+                ? 0 : Integer.parseInt(loadText(ActivityTinder.this, MULT));
 
         dbHelper = new DBHelper(this);
 
@@ -61,6 +74,26 @@ public class ActivityTinder extends AppCompatActivity {
 //            lastId = c.getLong(0); //The 0 is the column index, we only have 1 column, so the index is 0
 //        }
 
+        Cursor c = dbHelper.queryDoneChallenges();
+        if (c.moveToFirst()) {
+
+            int challengeTaskIndex = c.getColumnIndex("list");
+
+            String name = c.getString(challengeTaskIndex);
+
+            dones = new ArrayList<String>(Arrays.asList(name.substring(1, name.length() - 1)));
+        }
+
+        Button button =(Button)findViewById(R.id.dbbtn);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+
+                Intent dbmanager = new Intent(ActivityTinder.this,AndroidDatabaseManager.class);
+                startActivity(dbmanager);
+            }
+        });
+
         txtCountDone.setText(String.valueOf(countDone));
     }
 
@@ -69,6 +102,7 @@ public class ActivityTinder extends AppCompatActivity {
         super.onPostCreate(savedInstanceState);
 //        mSwipView.disableTouchSwipe();
 
+
         mSwipView.addItemRemoveListener(new ItemRemovedListener() {
 
             @Override
@@ -76,11 +110,11 @@ public class ActivityTinder extends AppCompatActivity {
                 Log.d(TAG, "onItemRemoved: " + count);
 
                 if(count == 0){
+                    generateThreeIds();
                     mSwipView
-                            .addView(new TinderCard(MIN + (int)(Math.random() * ((MAX - MIN) + 1))))
-                            .addView(new TinderCard(MIN + (int)(Math.random() * ((MAX - MIN) + 1))))
-                            .addView(new TinderCard(MIN + (int)(Math.random() * ((MAX - MIN) + 1))))
-                            ;
+                            .addView(new TinderCard(id1, ActivityTinder.this))
+                            .addView(new TinderCard(id2, ActivityTinder.this))
+                            .addView(new TinderCard(id3, ActivityTinder.this));
                 }
             }
         });
@@ -99,11 +133,13 @@ public class ActivityTinder extends AppCompatActivity {
                         .setSwipeInMsgLayoutId(R.layout.tinder_swipe_in_msg_view)
                         .setSwipeOutMsgLayoutId(R.layout.tinder_swipe_out_msg_view));
 
-
-        mSwipView.addView(new TinderCard())
-                .addView(new TinderCard())
-                .addView(new TinderCard())
+        generateThreeIds();
+        mSwipView
+                .addView(new TinderCard(id1, ActivityTinder.this))
+                .addView(new TinderCard(id2, ActivityTinder.this))
+                .addView(new TinderCard(id3, ActivityTinder.this))
                 ;
+
         new Thread(new Runnable(){
             @Override
             public void run() {
@@ -131,8 +167,6 @@ public class ActivityTinder extends AppCompatActivity {
 
     @OnClick(R.id.acceptBtn)
     void onAcceptClick(){
-        countDone ++;
-        txtCountDone.setText(String.valueOf(countDone));
         mSwipView.doSwipe(true);
     }
 
@@ -145,16 +179,93 @@ public class ActivityTinder extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         saveText(ActivityTinder.this, COUNT_DONE, String.valueOf(countDone));
+        saveText(ActivityTinder.this, MULT, String.valueOf(mult));
     }
 
     public static void minusCountDone() {
         countDone--;
+        txtCountDone.setText(String.valueOf(countDone));
     }
-    public static void plusCountDone() {
+
+    public static void plusCountDone(Context context, int id) {
         countDone++;
+        txtCountDone.setText(String.valueOf(countDone));
+        DBHelper db = new DBHelper(context);
+        db.updateDoneChallenges(id);
     }
 
     private void generateThreeIds() {
+        if ((countDone - (MAX + 1) * mult) >= MAX + 1) {
+            dbHelper.resetChallenges();
+//            countDone = 0;
+            mult ++;
+            txtCountDone.setText(String.valueOf(countDone));
+
+            Cursor c = dbHelper.queryDoneChallenges();
+            if (c.moveToFirst()) {
+
+                int challengeTaskIndex = c.getColumnIndex("list");
+
+                String name = c.getString(challengeTaskIndex);
+
+                dones = new ArrayList<String>(Arrays.asList(name.substring(1, name.length() - 1)));
+            }
+        }
+
+        boolean flag1 = false, flag2 = false, flag3 = false;
+
+        id1 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
+        while(true) {
+            flag1 = true;
+            for(int i = 0; i < dones.size(); i++) {
+                if (dones.contains(String.valueOf(id1))) {
+                    id1 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
+
+                    flag1 = false;
+                    break;
+                }
+            }
+            if (flag1) {
+                dones.add(String.valueOf(id1));
+                break;
+            }
+        }
+
+        id2 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
+        while(true) {
+            flag2 = true;
+            for(int i = 0; i < dones.size(); i++) {
+                if (dones.contains(String.valueOf(id2))) {
+                    id2 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
+                    flag2 = false;
+                    break;
+                }
+            }
+            if (flag2) {
+                dones.add(String.valueOf(id2));
+                break;
+            }
+        }
+
+        id3 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
+        while(true) {
+            flag3 = true;
+            for(int i = 0; i < dones.size(); i++) {
+                if (dones.contains(String.valueOf(id3))) {
+                    id3 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
+                    flag3 = false;
+                    break;
+                }
+            }
+            if (flag3) {
+                dones.add(String.valueOf(id3));
+                break;
+            }
+        }
+
+        dones.remove(String.valueOf(id1));
+        dones.remove(String.valueOf(id2));
+        dones.remove(String.valueOf(id3));
 
     }
 }

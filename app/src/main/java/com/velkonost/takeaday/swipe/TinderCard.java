@@ -1,10 +1,10 @@
 package com.velkonost.takeaday.swipe;
 
+import android.content.Context;
+import android.database.Cursor;
 import android.util.Log;
-import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.mindorks.placeholderview.annotations.Click;
 import com.mindorks.placeholderview.annotations.Layout;
 import com.mindorks.placeholderview.annotations.NonReusable;
 import com.mindorks.placeholderview.annotations.Resolve;
@@ -15,6 +15,7 @@ import com.mindorks.placeholderview.annotations.swipe.SwipeInState;
 import com.mindorks.placeholderview.annotations.swipe.SwipeOut;
 import com.mindorks.placeholderview.annotations.swipe.SwipeOutState;
 import com.velkonost.takeaday.R;
+import com.velkonost.takeaday.managers.DBHelper;
 
 import static com.velkonost.takeaday.ActivityTinder.plusCountDone;
 
@@ -27,30 +28,48 @@ import static com.velkonost.takeaday.ActivityTinder.plusCountDone;
 public class TinderCard {
 
     private int challengeId;
+    private DBHelper dbHelper;
 
-    public TinderCard(int challengeId) {
+    private String description;
+    private String titleTxt;
+
+    private Context context;
+
+    public TinderCard(int challengeId, Context context) {
         this.challengeId = challengeId;
+        this.context = context;
+
+        dbHelper = new DBHelper(context);
+
+        Cursor c = dbHelper.queryByIdChallenge(challengeId);
+
+        if (c.moveToFirst()) {
+
+
+            int titleIndex = c.getColumnIndex("title");
+            int descIndex = c.getColumnIndex("desc");
+
+            titleTxt = c.getString(titleIndex);
+            description = c.getString(descIndex);
+
+
+        }
+
     }
 
-    private static int count;
 
-    @View(R.id.profileImageView)
-    private ImageView profileImageView;
+    @View(R.id.title)
+    private TextView title;
 
-    @View(R.id.nameAgeTxt)
-    private TextView nameAgeTxt;
+    @View(R.id.desc)
+    private TextView desc;
 
-    @View(R.id.locationNameTxt)
-    private TextView locationNameTxt;
 
-    @Click(R.id.profileImageView)
-    private void onClick(){
-        Log.d("DEBUG", "profileImageView");
-    }
 
     @Resolve
     private void onResolve(){
-        nameAgeTxt.setText("Name " + count++);
+        title.setText(titleTxt);
+        desc.setText(description);
     }
 
     @SwipeOut
@@ -65,7 +84,7 @@ public class TinderCard {
 
     @SwipeIn
     private void onSwipeIn(){
-        plusCountDone();
+        plusCountDone(context, challengeId);
         Log.d("DEBUG", "onSwipedIn");
     }
 
