@@ -17,7 +17,11 @@ import com.mindorks.placeholderview.annotations.swipe.SwipeOutState;
 import com.velkonost.takeaday.R;
 import com.velkonost.takeaday.managers.DBHelper;
 
+import static com.velkonost.takeaday.ActivityTinder.descUndo;
+import static com.velkonost.takeaday.ActivityTinder.isUndoAllow;
+import static com.velkonost.takeaday.ActivityTinder.minusCountDone;
 import static com.velkonost.takeaday.ActivityTinder.plusCountDone;
+import static com.velkonost.takeaday.ActivityTinder.titleUndo;
 
 /**
  * @author Velkonost
@@ -52,11 +56,9 @@ public class TinderCard {
             titleTxt = c.getString(titleIndex);
             description = c.getString(descIndex);
 
-
         }
 
     }
-
 
     @View(R.id.title)
     private TextView title;
@@ -64,16 +66,26 @@ public class TinderCard {
     @View(R.id.desc)
     private TextView desc;
 
-
-
     @Resolve
     private void onResolve(){
+
+        if (titleTxt == null) {
+            titleTxt = titleUndo;
+        }
+
+        if (description == null) {
+            description = descUndo;
+        }
+
         title.setText(titleTxt);
         desc.setText(description);
     }
 
     @SwipeOut
     private void onSwipedOut(){
+        minusCountDone();
+        isUndoAllow = true;
+
         Log.d("DEBUG", "onSwipedOut");
     }
 
@@ -85,16 +97,26 @@ public class TinderCard {
     @SwipeIn
     private void onSwipeIn(){
         plusCountDone(context, challengeId);
+        isUndoAllow = true;
+
         Log.d("DEBUG", "onSwipedIn");
     }
 
     @SwipeInState
     private void onSwipeInState(){
+        titleUndo = titleTxt;
+        descUndo = description;
+
         Log.d("DEBUG", "onSwipeInState");
     }
 
     @SwipeOutState
     private void onSwipeOutState(){
+        titleUndo = titleTxt;
+        descUndo = description;
+
         Log.d("DEBUG", "onSwipeOutState");
     }
+
+
 }

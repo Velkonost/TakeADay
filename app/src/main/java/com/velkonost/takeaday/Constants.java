@@ -12,6 +12,9 @@ public class Constants {
     public static final String MULT = "mult";
     public static final String ID1 = "id1";
 
+    public static final String TITLE = "title";
+    public static final String DESC = "desc";
+
     public static final int MAX = 43;
     public static final int MIN = 0;
 

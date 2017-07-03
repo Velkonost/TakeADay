@@ -41,6 +41,7 @@ public class ActivityTinder extends AppCompatActivity {
 
     public static int countDone = 0;
     public static int mult = 0;
+    public static boolean isLastAccept;
 
     private int id1, id2, id3;
     private static boolean isId1;
@@ -54,6 +55,10 @@ public class ActivityTinder extends AppCompatActivity {
 
     private DBHelper dbHelper;
     private ArrayList<Integer> dones;
+
+    public static String titleUndo, descUndo;
+
+    public static boolean isUndoAllow = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,8 +80,6 @@ public class ActivityTinder extends AppCompatActivity {
 
         dbHelper = new DBHelper(this);
 
-
-
         Cursor c = dbHelper.queryDoneChallenges();
         if (c.moveToFirst()) {
 
@@ -88,8 +91,7 @@ public class ActivityTinder extends AppCompatActivity {
 
             Integer[] numbers = new Integer[str.length];
 
-            for(int i = 0;i < str.length;i++)
-            {
+            for(int i = 0;i < str.length;i++) {
                 numbers[i] = Integer.parseInt(str[i]);
             }
 
@@ -114,7 +116,6 @@ public class ActivityTinder extends AppCompatActivity {
         super.onPostCreate(savedInstanceState);
 //        mSwipView.disableTouchSwipe();
 
-
         mSwipView.addItemRemoveListener(new ItemRemovedListener() {
 
             @Override
@@ -122,6 +123,7 @@ public class ActivityTinder extends AppCompatActivity {
                 Log.d(TAG, "onItemRemoved: " + count);
 
                 if(count == 0){
+                    isUndoAllow = false;
                     generateThreeIds();
                     mSwipView
                             .addView(new TinderCard(id1, ActivityTinder.this))
@@ -165,7 +167,7 @@ public class ActivityTinder extends AppCompatActivity {
 //                    mSwipView.lockViews();
 //                    Thread.currentThread().sleep(4000);
 //                    mSwipView.unlockViews();
-                }catch (InterruptedException e){
+                } catch (InterruptedException e){
                     e.printStackTrace();
                 }
             }
@@ -174,17 +176,26 @@ public class ActivityTinder extends AppCompatActivity {
 
     @OnClick(R.id.rejectBtn)
     void onRejectClick(){
+        isUndoAllow = true;
         mSwipView.doSwipe(false);
     }
 
     @OnClick(R.id.acceptBtn)
     void onAcceptClick(){
+        isUndoAllow = true;
         mSwipView.doSwipe(true);
     }
 
     @OnClick(R.id.undoBtn)
     void onUndoClick(){
-        mSwipView.undoLastSwipe();
+        if (isUndoAllow) {
+            mSwipView.undoLastSwipe();
+            if (isLastAccept) {
+                countDone--;
+                txtCountDone.setText(String.valueOf(countDone));
+            }
+            isUndoAllow = false;
+        }
     }
 
     @Override
@@ -217,8 +228,11 @@ public class ActivityTinder extends AppCompatActivity {
     }
 
     public static void minusCountDone() {
-        countDone--;
+        currentIdOnTop ++;
+        if (currentIdOnTop > 3) currentIdOnTop = 1;
+
         txtCountDone.setText(String.valueOf(countDone));
+        isLastAccept = false;
     }
 
     public static void plusCountDone(Context context, int id) {
@@ -226,9 +240,11 @@ public class ActivityTinder extends AppCompatActivity {
         txtCountDone.setText(String.valueOf(countDone));
         DBHelper db = new DBHelper(context);
         db.updateDoneChallenges(String.valueOf(id));
-//        if (currentIdOnTop == 1 && isId1) isId1 = false;
+
         currentIdOnTop ++;
         if (currentIdOnTop > 3) currentIdOnTop = 1;
+
+        isLastAccept = true;
 
     }
 
@@ -273,7 +289,6 @@ public class ActivityTinder extends AppCompatActivity {
         while (true) {
             flag1 = true;
             for (int i = 0; i < dones.size(); i++) {
-                Log.i(String.valueOf(id1), String.valueOf(dones.get(i).equals(id1)));
                 if (dones.get(i) == id1) {
                     id1 = MIN + (int) (Math.random() * ((MAX - MIN) + 1));
 
