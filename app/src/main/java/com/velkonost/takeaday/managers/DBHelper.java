@@ -28,7 +28,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public DBHelper(Context context) {
         // конструктор суперкласса
-        super(context, "myDB15", null, 1);
+        super(context, "myDB18", null, 1);
 
         this.mContext = context;
     }
@@ -190,8 +190,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
     }
 
-    public void updateDoneChallenges(int newId) {
-        ArrayList dones = new ArrayList();
+    public void updateDoneChallenges(String newId) {
+        ArrayList<String> dones = new ArrayList<String>();
 
         Cursor c = this.getWritableDatabase().query(DONE,
                 null,

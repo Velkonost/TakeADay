@@ -25,6 +25,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 import static com.velkonost.takeaday.Constants.COUNT_DONE;
+import static com.velkonost.takeaday.Constants.ID1;
 import static com.velkonost.takeaday.Constants.MAX;
 import static com.velkonost.takeaday.Constants.MIN;
 import static com.velkonost.takeaday.Constants.MULT;
@@ -42,6 +43,8 @@ public class ActivityTinder extends AppCompatActivity {
     public static int mult = 0;
 
     private int id1, id2, id3;
+    private static boolean isId1;
+    private static int currentIdOnTop;
 
     @BindView(R.id.swipeView)
     SwipePlaceHolderView mSwipView;
@@ -50,7 +53,7 @@ public class ActivityTinder extends AppCompatActivity {
     static TextView txtCountDone;
 
     private DBHelper dbHelper;
-    private ArrayList<String> dones;
+    private ArrayList<Integer> dones;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,16 +66,16 @@ public class ActivityTinder extends AppCompatActivity {
         countDone = loadText(ActivityTinder.this, COUNT_DONE).equals("")
                 ? 0 : Integer.parseInt(loadText(ActivityTinder.this, COUNT_DONE));
 
-        mult= loadText(ActivityTinder.this, MULT).equals("")
+        mult = loadText(ActivityTinder.this, MULT).equals("")
                 ? 0 : Integer.parseInt(loadText(ActivityTinder.this, MULT));
+
+        isId1 = true;
+
+        currentIdOnTop = 1;
 
         dbHelper = new DBHelper(this);
 
 
-//        Cursor c = db.rawQuery(query);
-//        if (c != null && c.moveToFirst()) {
-//            lastId = c.getLong(0); //The 0 is the column index, we only have 1 column, so the index is 0
-//        }
 
         Cursor c = dbHelper.queryDoneChallenges();
         if (c.moveToFirst()) {
@@ -80,8 +83,17 @@ public class ActivityTinder extends AppCompatActivity {
             int challengeTaskIndex = c.getColumnIndex("list");
 
             String name = c.getString(challengeTaskIndex);
+            name = name.substring(1, name.length() - 1);
+            String[] str = name.split(", ");
 
-            dones = new ArrayList<String>(Arrays.asList(name.substring(1, name.length() - 1)));
+            Integer[] numbers = new Integer[str.length];
+
+            for(int i = 0;i < str.length;i++)
+            {
+                numbers[i] = Integer.parseInt(str[i]);
+            }
+
+            dones = new ArrayList<Integer>(Arrays.<Integer>asList(numbers));
         }
 
         Button button =(Button)findViewById(R.id.dbbtn);
@@ -180,6 +192,28 @@ public class ActivityTinder extends AppCompatActivity {
         super.onStop();
         saveText(ActivityTinder.this, COUNT_DONE, String.valueOf(countDone));
         saveText(ActivityTinder.this, MULT, String.valueOf(mult));
+
+        if (currentIdOnTop == 1)
+            saveText(ActivityTinder.this, ID1, String.valueOf(id1));
+        else if (currentIdOnTop == 2)
+            saveText(ActivityTinder.this, ID1, String.valueOf(id2));
+        else if (currentIdOnTop == 3)
+            saveText(ActivityTinder.this, ID1, String.valueOf(id3));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        saveText(ActivityTinder.this, COUNT_DONE, String.valueOf(countDone));
+        saveText(ActivityTinder.this, MULT, String.valueOf(mult));
+
+        if (currentIdOnTop == 1)
+            saveText(ActivityTinder.this, ID1, String.valueOf(id1));
+        else if (currentIdOnTop == 2)
+            saveText(ActivityTinder.this, ID1, String.valueOf(id2));
+        else if (currentIdOnTop == 3)
+            saveText(ActivityTinder.this, ID1, String.valueOf(id3));
     }
 
     public static void minusCountDone() {
@@ -191,7 +225,11 @@ public class ActivityTinder extends AppCompatActivity {
         countDone++;
         txtCountDone.setText(String.valueOf(countDone));
         DBHelper db = new DBHelper(context);
-        db.updateDoneChallenges(id);
+        db.updateDoneChallenges(String.valueOf(id));
+//        if (currentIdOnTop == 1 && isId1) isId1 = false;
+        currentIdOnTop ++;
+        if (currentIdOnTop > 3) currentIdOnTop = 1;
+
     }
 
     private void generateThreeIds() {
@@ -201,48 +239,70 @@ public class ActivityTinder extends AppCompatActivity {
             mult ++;
             txtCountDone.setText(String.valueOf(countDone));
 
-            Cursor c = dbHelper.queryDoneChallenges();
-            if (c.moveToFirst()) {
 
-                int challengeTaskIndex = c.getColumnIndex("list");
+        }
+        Cursor c = dbHelper.queryDoneChallenges();
+        if (c.moveToFirst()) {
 
-                String name = c.getString(challengeTaskIndex);
+            int challengeTaskIndex = c.getColumnIndex("list");
 
-                dones = new ArrayList<String>(Arrays.asList(name.substring(1, name.length() - 1)));
+            String name = c.getString(challengeTaskIndex);
+            name = name.substring(1, name.length() - 1);
+            String[] str = name.split(", ");
+
+            Integer[] numbers = new Integer[str.length];
+
+            for(int i = 0;i < str.length;i++)
+            {
+                numbers[i] = Integer.parseInt(str[i]);
             }
+            dones = new ArrayList<Integer>(Arrays.<Integer>asList(numbers));
+
         }
 
         boolean flag1 = false, flag2 = false, flag3 = false;
 
-        id1 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
-        while(true) {
+        if (isId1) {
+            id1 = loadText(ActivityTinder.this, ID1).equals("")
+                    ? MIN + (int) (Math.random() * ((MAX - MIN) + 1)) : Integer.parseInt(loadText(ActivityTinder.this, ID1));
+            isId1 = false;
+        } else {
+            id1 = MIN + (int) (Math.random() * ((MAX - MIN) + 1));
+        }
+
+        while (true) {
             flag1 = true;
-            for(int i = 0; i < dones.size(); i++) {
-                if (dones.contains(String.valueOf(id1))) {
-                    id1 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
+            for (int i = 0; i < dones.size(); i++) {
+                Log.i(String.valueOf(id1), String.valueOf(dones.get(i).equals(id1)));
+                if (dones.get(i) == id1) {
+                    id1 = MIN + (int) (Math.random() * ((MAX - MIN) + 1));
 
                     flag1 = false;
                     break;
                 }
             }
+
             if (flag1) {
-                dones.add(String.valueOf(id1));
+                dones.add(id1);
                 break;
             }
+
         }
 
         id2 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
         while(true) {
             flag2 = true;
             for(int i = 0; i < dones.size(); i++) {
-                if (dones.contains(String.valueOf(id2))) {
+                if (dones.get(i).equals(id2)) {
                     id2 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
+
+
                     flag2 = false;
                     break;
                 }
             }
             if (flag2) {
-                dones.add(String.valueOf(id2));
+                dones.add(id2);
                 break;
             }
         }
@@ -251,21 +311,22 @@ public class ActivityTinder extends AppCompatActivity {
         while(true) {
             flag3 = true;
             for(int i = 0; i < dones.size(); i++) {
-                if (dones.contains(String.valueOf(id3))) {
+                if (dones.get(i).equals(id3)) {
                     id3 = MIN + (int)(Math.random() * ((MAX - MIN) + 1));
+
                     flag3 = false;
                     break;
                 }
             }
             if (flag3) {
-                dones.add(String.valueOf(id3));
+                dones.add(id3);
                 break;
             }
         }
 
-        dones.remove(String.valueOf(id1));
-        dones.remove(String.valueOf(id2));
-        dones.remove(String.valueOf(id3));
+        dones.remove(Integer.valueOf(id1));
+        dones.remove(Integer.valueOf(id2));
+        dones.remove(Integer.valueOf(id3));
 
     }
 }
