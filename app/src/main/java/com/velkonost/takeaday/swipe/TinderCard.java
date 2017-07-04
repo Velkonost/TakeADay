@@ -86,6 +86,9 @@ public class TinderCard {
         minusCountDone();
         isUndoAllow = true;
 
+        titleUndo = titleTxt;
+        descUndo = description;
+
         Log.d("DEBUG", "onSwipedOut");
     }
 
@@ -99,21 +102,22 @@ public class TinderCard {
         plusCountDone(context, challengeId);
         isUndoAllow = true;
 
+        titleUndo = titleTxt;
+        descUndo = description;
+
         Log.d("DEBUG", "onSwipedIn");
     }
 
     @SwipeInState
     private void onSwipeInState(){
-        titleUndo = titleTxt;
-        descUndo = description;
+
 
         Log.d("DEBUG", "onSwipeInState");
     }
 
     @SwipeOutState
     private void onSwipeOutState(){
-        titleUndo = titleTxt;
-        descUndo = description;
+
 
         Log.d("DEBUG", "onSwipeOutState");
     }

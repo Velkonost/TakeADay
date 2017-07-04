@@ -249,7 +249,7 @@ public class ActivityTinder extends AppCompatActivity {
     }
 
     private void generateThreeIds() {
-        if ((countDone - (MAX + 1) * mult) >= MAX + 1) {
+        if ((countDone - (40 + 1) * mult) >= 40 + 1) {
             dbHelper.resetChallenges();
 //            countDone = 0;
             mult ++;

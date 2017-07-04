@@ -16,6 +16,7 @@ public class Constants {
     public static final String DESC = "desc";
 
     public static final int MAX = 43;
+    public static final int ABSOLUTELY_MAX = 42;
     public static final int MIN = 0;
 
 }
